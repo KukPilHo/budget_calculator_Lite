@@ -905,10 +905,30 @@
             return;
           }
 
-          // 첫 번째 아이템 파싱
-          const firstItem = items[0];
-          const inwon = firstItem.getElementsByTagName("sangsiInwonCnt")[0]?.textContent;
-          const eopjongCd = firstItem.getElementsByTagName("gyEopjongCd")[0]?.textContent || firstItem.getElementsByTagName("sjEopjongCd")[0]?.textContent; 
+          // 여러 아이템 중 고용보험(gyEopjongCd) 정보가 있는 항목을 우선으로 찾습니다.
+          let inwon = "";
+          let eopjongCd = "";
+          let saeopjangNm = "";
+
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const gyCd = item.getElementsByTagName("gyEopjongCd")[0]?.textContent;
+            
+            // 이름과 인원은 어떤 아이템에서든 가져옵니다.
+            if (!inwon) inwon = item.getElementsByTagName("sangsiInwonCnt")[0]?.textContent;
+            if (!saeopjangNm) saeopjangNm = item.getElementsByTagName("saeopjangNm")[0]?.textContent;
+            
+            // 고용보험 업종코드(KSIC 기반)가 있으면 최우선으로 저장하고 탐색을 종료합니다.
+            if (gyCd) {
+              eopjongCd = gyCd;
+              break; 
+            }
+          }
+
+          // 고용보험 코드가 전혀 없는 경우에만 산재보험 코드로 폴백 (분류 체계가 달라 매핑이 부정확할 수 있음)
+          if (!eopjongCd && items.length > 0) {
+             eopjongCd = items[0].getElementsByTagName("sjEopjongCd")[0]?.textContent;
+          }
           
           if (inwon) {
             document.getElementById("employees").value = inwon;
@@ -945,7 +965,6 @@
             }
           }
 
-          const saeopjangNm = firstItem.getElementsByTagName("saeopjangNm")[0]?.textContent;
           bizHelper.textContent = saeopjangNm ? `'${saeopjangNm}' 정보가 채워졌습니다.` : "조회 및 자동 채움 완료!";
           bizHelper.style.color = "var(--accent-dark)";
         } catch (e) {
