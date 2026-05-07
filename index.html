@@ -680,7 +680,7 @@
       "J": { "300under": 4502000, "300over": 7929000 },
       "K": { "300under": 6160000, "300over": 10849000 },
       "L": { "300under": 2902000, "300over": 5110000 },
-      "M": { "300under": 4145000, "300over": 7300000 },
+      "M": { "300under": 3145000, "300over": 5300000 },
       "N": { "300under": 2345000, "300over": 4130000 },
       "O": { "300under": 3482000, "300over": 6132000 },
       "P": { "300under": 3316000, "300over": 5840000 },
@@ -757,7 +757,7 @@
           if (isPriority) {
             return Math.max(insurancePremium * 2.4, 5000000);
           }
-          return insurancePremium * 0.8;
+          return insurancePremium * 1.0;
         };
 
         result.mode = "estimate";
@@ -1113,12 +1113,12 @@
         nonPriorityNotice.className = "notice notice-info";
         nonPriorityNotice.innerHTML =
           '<strong>비우선지원대상기업으로 240% 한도 미적용. 100% 한도 적용</strong>' +
-          '<div style="margin-top:8px;">단, 본 도구는 근로자 수 기준만으로 판정하므로 다음 경우 우선지원대상기업으로 인정될 수 있습니다.</div>' +
-          '<ul>' +
+          '<div style="margin-top:12px; padding: 12px; background: #fff5f5; color: var(--error); border-radius: 6px; font-weight: 600; font-size: 14px; border: 1px solid #feb2b2; line-height: 1.4;">단, 본 도구는 근로자 수 기준만으로 판정하므로 다음 경우 우선지원대상기업으로 인정될 수 있습니다.</div>' +
+          '<ul style="margin-top: 10px;">' +
           '<li>중소기업기본법상 중소기업으로 인정되는 경우 (매출액·자산총액 기준)</li>' +
           '<li>이전에 우선지원대상이었다가 규모 확대로 해당하지 않게 된 후 5년 이내인 경우</li>' +
           '</ul>' +
-          '<a class="check-link" href="' + PRIORITY_CHECK_URL + '" target="_blank" rel="noopener noreferrer">고용24에서 정확하게 조회하기 →</a>';
+          '<a class="check-link" style="font-size: 15px;" href="' + PRIORITY_CHECK_URL + '" target="_blank" rel="noopener noreferrer">고용24에서 정확하게 조회하기 →</a>';
         card.appendChild(nonPriorityNotice);
       }
 
