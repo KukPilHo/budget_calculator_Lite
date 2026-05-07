@@ -569,6 +569,15 @@
     <form class="form" id="calc-form" onsubmit="return false;">
 
       <div class="field">
+        <label class="label" for="business-no">사업자등록번호 (선택)</label>
+        <div class="input-with-suffix" style="display: flex; gap: 8px;">
+          <input class="input" type="text" id="business-no" placeholder="예: 1234567890 (10자리 숫자)" maxlength="12">
+          <button type="button" id="api-fetch-btn" class="button" style="width: auto; padding: 12px 16px; white-space: nowrap;">자동 채움</button>
+        </div>
+        <div class="input-helper" id="business-helper">입력 시 상시근로자 수와 업종이 자동 입력됩니다.</div>
+      </div>
+
+      <div class="field">
         <label class="label" for="industry">업종 (한국표준산업분류)<span class="required">*</span></label>
         <select class="select" id="industry" required>
           <option value="">업종을 선택하세요</option>
@@ -852,6 +861,100 @@
         opt.value = c.code;
         opt.textContent = c.code + " - " + c.name;
         industrySelect.appendChild(opt);
+      });
+
+      // 사업자등록번호 API 자동 채움
+      const bizInput = document.getElementById("business-no");
+      const fetchBtn = document.getElementById("api-fetch-btn");
+      const bizHelper = document.getElementById("business-helper");
+
+      fetchBtn.addEventListener("click", async () => {
+        let bizNo = bizInput.value.replace(/[^0-9]/g, "");
+        if (bizNo.length !== 10) {
+          bizHelper.textContent = "10자리 사업자등록번호를 정확히 입력해주세요.";
+          bizHelper.style.color = "var(--error)";
+          return;
+        }
+
+        bizHelper.textContent = "조회 중...";
+        bizHelper.style.color = "var(--ink-muted)";
+        fetchBtn.disabled = true;
+
+        try {
+          const API_KEY = "50e5381a34dc2b9bcdfa479630714a1d2f000832482004b641955551b529e3c3";
+          // 공공데이터포털 HTTPS 호출
+          const url = new URL("https://apis.data.go.kr/B490001/gySjbPstateInfoService/getGySjBoheomBsshItem");
+          url.searchParams.append("serviceKey", decodeURIComponent(API_KEY));
+          url.searchParams.append("pageNo", "1");
+          url.searchParams.append("numOfRows", "10");
+          url.searchParams.append("resultType", "json");
+          url.searchParams.append("v_saeopjaDrno", bizNo);
+
+          const response = await fetch(url.toString());
+          const text = await response.text();
+
+          // XML 파싱
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(text, "text/xml");
+          
+          const items = xml.getElementsByTagName("item");
+          if (items.length === 0) {
+            bizHelper.textContent = "조회된 사업장 정보가 없습니다. 직접 입력해주세요.";
+            bizHelper.style.color = "var(--warn-ink)";
+            fetchBtn.disabled = false;
+            return;
+          }
+
+          // 첫 번째 아이템 파싱
+          const firstItem = items[0];
+          const inwon = firstItem.getElementsByTagName("sangsiInwonCnt")[0]?.textContent;
+          const eopjongCd = firstItem.getElementsByTagName("gyEopjongCd")[0]?.textContent || firstItem.getElementsByTagName("sjEopjongCd")[0]?.textContent; 
+          
+          if (inwon) {
+            document.getElementById("employees").value = inwon;
+          }
+
+          // 업종 코드(5자리) -> 21개 대분류 매핑
+          if (eopjongCd && eopjongCd.length >= 2) {
+            const prefix = parseInt(eopjongCd.substring(0, 2), 10);
+            let category = "";
+            if (prefix >= 1 && prefix <= 3) category = "A";
+            else if (prefix >= 5 && prefix <= 8) category = "B";
+            else if (prefix >= 10 && prefix <= 34) category = "C";
+            else if (prefix === 35) category = "D";
+            else if (prefix >= 36 && prefix <= 39) category = "E";
+            else if (prefix >= 41 && prefix <= 42) category = "F";
+            else if (prefix >= 45 && prefix <= 47) category = "G";
+            else if (prefix >= 49 && prefix <= 52) category = "H";
+            else if (prefix >= 55 && prefix <= 56) category = "I";
+            else if (prefix >= 58 && prefix <= 63) category = "J";
+            else if (prefix >= 64 && prefix <= 66) category = "K";
+            else if (prefix === 68) category = "L";
+            else if (prefix >= 70 && prefix <= 73) category = "M";
+            else if (prefix >= 74 && prefix <= 76) category = "N";
+            else if (prefix === 84) category = "O";
+            else if (prefix === 85) category = "P";
+            else if (prefix >= 86 && prefix <= 87) category = "Q";
+            else if (prefix >= 90 && prefix <= 91) category = "R";
+            else if (prefix >= 94 && prefix <= 96) category = "S";
+            else if (prefix >= 97 && prefix <= 98) category = "T";
+            else if (prefix === 99) category = "U";
+
+            if (category) {
+              document.getElementById("industry").value = category;
+            }
+          }
+
+          const saeopjangNm = firstItem.getElementsByTagName("saeopjangNm")[0]?.textContent;
+          bizHelper.textContent = saeopjangNm ? `'${saeopjangNm}' 정보가 채워졌습니다.` : "조회 및 자동 채움 완료!";
+          bizHelper.style.color = "var(--accent-dark)";
+        } catch (e) {
+          bizHelper.textContent = "API 조회 중 오류가 발생했습니다. 직접 입력해주세요.";
+          bizHelper.style.color = "var(--error)";
+          console.error(e);
+        } finally {
+          fetchBtn.disabled = false;
+        }
       });
 
       // 임금 입력 콤마
